@@ -1,0 +1,139 @@
+{% extends "blog/base.html" %}
+{% block content %}
+
+<article class="card border-0 shadow-sm">
+  {% if post.cover_image %}
+  <img src="{{ post.cover_image.url }}" class="card-img-top post-cover-img-detail" alt="{{ post.title }}">
+  {% endif %}
+  <div class="card-body p-4">
+
+    <!-- Meta -->
+    <div class="post-meta mb-3 d-flex align-items-center flex-wrap gap-2">
+      <img src="{{ post.author.profile.image.url }}" class="rounded-circle post-author-avatar" alt="{{ post.author }}">
+      <span class="text-muted small">{{ post.author }}</span>
+      <span class="text-muted small"><i class="bi bi-calendar3 me-1"></i>{{ post.date_posted|date:"M d, Y" }}</span>
+      {% if post.category %}
+      <a href="{% url 'category-posts' post.category.slug %}" class="badge bg-brand text-decoration-none">{{ post.category }}</a>
+      {% endif %}
+      {% if post.status == 'draft' %}
+      <span class="badge bg-warning text-dark">Draft</span>
+      {% endif %}
+    </div>
+
+    <h2 class="post-detail-title mb-4">{{ post.title }}</h2>
+
+    <!-- Content -->
+    <div class="post-content">{{ post.content|safe }}</div>
+
+    <!-- Tags -->
+    {% if post.tags.all %}
+    <div class="mt-4 pt-3 border-top">
+      {% for tag in post.tags.all %}
+      <a href="{% url 'tag-posts' tag.slug %}" class="badge bg-light text-secondary border me-1 text-decoration-none">#{{ tag.name }}</a>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Reader actions (logged-in non-authors) -->
+    {% if user.is_authenticated %}
+    <div class="mt-4 pt-3 border-top d-flex flex-wrap gap-2 align-items-center">
+
+      <!-- Mark as Read toggle -->
+      <button id="btn-read"
+        class="btn btn-sm {% if is_read %}btn-success{% else %}btn-outline-secondary{% endif %}"
+        data-url="{% url 'toggle-read' post.slug %}"
+        data-read="{{ is_read|yesno:'true,false' }}">
+        <i class="bi {% if is_read %}bi-check-circle-fill{% else %}bi-check-circle{% endif %} me-1"></i>
+        <span id="read-label">{% if is_read %}Marked as Read{% else %}Mark as Read{% endif %}</span>
+      </button>
+
+      <!-- Save for Later toggle -->
+      <button id="btn-save"
+        class="btn btn-sm {% if is_saved %}btn-warning{% else %}btn-outline-secondary{% endif %}"
+        data-url="{% url 'toggle-save' post.slug %}"
+        data-saved="{{ is_saved|yesno:'true,false' }}">
+        <i class="bi {% if is_saved %}bi-bookmark-fill{% else %}bi-bookmark{% endif %} me-1"></i>
+        <span id="save-label">{% if is_saved %}Saved{% else %}Save for Later{% endif %}</span>
+      </button>
+
+      {% if user == post.author %}
+      <div class="ms-auto d-flex gap-2">
+        <a href="{% url 'post-update' post.slug %}" class="btn btn-sm btn-outline-secondary">
+          <i class="bi bi-pencil me-1"></i>Edit
+        </a>
+        <a href="{% url 'post-delete' post.slug %}" class="btn btn-sm btn-outline-danger">
+          <i class="bi bi-trash me-1"></i>Delete
+        </a>
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+  </div>
+</article>
+
+<a href="{% url 'blog-home' %}" class="btn btn-link ps-0 mt-3">
+  <i class="bi bi-arrow-left me-1"></i>Back to Home
+</a>
+
+{% if user.is_authenticated %}
+<script>
+(function () {
+  const csrf = '{{ csrf_token }}';
+
+  function setupToggle(btnId, labelId, urlAttr, activeClass, activeIcon, inactiveIcon, activeText, inactiveText, stateAttr, onSuccess) {
+    const btn = document.getElementById(btnId);
+    if (!btn) return;
+    btn.addEventListener('click', function () {
+      btn.disabled = true;
+      fetch(btn.dataset.url, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': csrf, 'Content-Type': 'application/json' },
+      })
+      .then(r => r.json())
+      .then(data => {
+        const isActive = data.status === activeText || data.status === 'read' || data.status === 'saved';
+        btn.className = btn.className.replace(/btn-(outline-secondary|success|warning)/g, '');
+        btn.classList.add(isActive ? activeClass : 'btn-outline-secondary');
+        const icon = btn.querySelector('i');
+        icon.className = `bi ${isActive ? activeIcon : inactiveIcon} me-1`;
+        document.getElementById(labelId).textContent = isActive
+          ? (btnId === 'btn-read' ? 'Marked as Read' : 'Saved')
+          : (btnId === 'btn-read' ? 'Mark as Read' : 'Save for Later');
+        if (onSuccess) onSuccess(data);
+        btn.disabled = false;
+      })
+      .catch(() => { btn.disabled = false; });
+    });
+  }
+
+  setupToggle('btn-read', 'read-label', 'toggle-read',
+    'btn-success', 'bi-check-circle-fill', 'bi-check-circle');
+
+  setupToggle('btn-save', 'save-label', 'toggle-save',
+    'btn-warning', 'bi-bookmark-fill', 'bi-bookmark',
+    null, null,
+    function (data) {
+      // Update navbar badge
+      const badge = document.querySelector('.nav-badge');
+      if (data.saved_count > 0) {
+        if (badge) badge.textContent = data.saved_count;
+        else {
+          const link = document.querySelector('a[href*="reading-list"]');
+          if (link) {
+            const b = document.createElement('span');
+            b.className = 'nav-badge';
+            b.textContent = data.saved_count;
+            link.appendChild(b);
+          }
+        }
+      } else if (badge) {
+        badge.remove();
+      }
+    }
+  );
+})();
+</script>
+{% endif %}
+
+{% endblock content %}

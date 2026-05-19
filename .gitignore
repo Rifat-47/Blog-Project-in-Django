@@ -1,3 +1,27 @@
-# ignoring the following files and directories for version control 
+# Environment
+.env
 
-venvname/
+# Virtual environment
+venv/
+
+# Python
+*.pyc
+*.pyo
+__pycache__/
+*.egg-info/
+dist/
+build/
+
+# Django
+db.sqlite3
+media/
+staticfiles/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp

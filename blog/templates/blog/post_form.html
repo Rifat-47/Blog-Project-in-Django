@@ -1,0 +1,22 @@
+{% extends "blog/base.html" %}
+{% load crispy_forms_tags %}
+{% block content %}
+{{ form.media }}
+<div class="card border-0 shadow-sm">
+  <div class="card-body p-4">
+    <h4 class="card-title border-bottom pb-3 mb-4">{{ legend }}</h4>
+    <form method="POST" enctype="multipart/form-data">
+      {% csrf_token %}
+      {{ form|crispy }}
+      <div class="d-flex gap-2 mt-4">
+        <button class="btn btn-brand" type="submit">
+          <i class="bi bi-check-circle me-1"></i>Save Post
+        </button>
+        <a href="{% url 'blog-home' %}" class="btn btn-outline-secondary">
+          <i class="bi bi-x-circle me-1"></i>Cancel
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock content %}
