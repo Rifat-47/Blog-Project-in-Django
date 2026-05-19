@@ -14,7 +14,7 @@ Users will be able to edit & delete their post
 Clone the project
 
 ```bash
-  https://github.com/Rifat-47/Blog-Project-in-Django.git
+  git clone https://github.com/Rifat-47/Blog-Project-in-Django.git
 ```
 
 Go to the project directory
